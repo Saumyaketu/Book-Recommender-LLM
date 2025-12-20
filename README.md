@@ -2,12 +2,15 @@
 
 A semantic book recommendation engine that uses Large Language Models (LLMs) and vector search to find books based on natural language queries, specific categories, and emotional tone.
 
+---
 
 ## Overview
 
 This project goes beyond simple keyword matching. By leveraging **LangChain**, **ChromaDB**, and **Hugging Face embeddings**, it allows users to describe what they want to read in plain English (e.g., *"a story about a robot discovering humanity"*). The system analyzes the semantic meaning of the query and returns the most relevant books.
 
 Additionally, the system includes an **emotion analysis** feature, allowing users to sort recommendations based on the "tone" of the book (e.g., Happy, Suspenseful, Sad).
+
+---
 
 ## Features
 
@@ -16,6 +19,8 @@ Additionally, the system includes an **emotion analysis** feature, allowing user
 * **Category Filtering**: Narrow down results by specific genres (Fiction, Nonfiction, Fantasy, etc.).
 * **Interactive Dashboard**: A user-friendly web interface built with **Gradio** for easy interaction.
 * **Zero-Shot Classification**: Uses LLMs to categorize books that were missing genre tags in the original dataset.
+
+---
 
 ## Interface Demo
 
@@ -27,6 +32,8 @@ Here is the dashboard in action:
 ![Search Result](screenshots/img4.png)
 ![Search Result](screenshots/img5.png)
 
+---
+
 ## Tech Stack
 
 * **Python**: Core programming language.
@@ -35,6 +42,8 @@ Here is the dashboard in action:
 * **Hugging Face Transformers**: For text embeddings (`all-MiniLM-L6-v2`) and zero-shot classification (`facebook/bart-large-mnli`).
 * **Gradio**: For building the web-based user interface.
 * **Pandas & NumPy**: For data manipulation and analysis.
+
+---
 
 ## Project Structure
 
@@ -45,6 +54,8 @@ Here is the dashboard in action:
 * `sentiment_analysis.ipynb`: Notebook used to analyze the emotional tone of book descriptions.
 * `data_exploration.ipynb`: Initial data cleaning and exploration.
 * `requirements.txt`: List of Python dependencies.
+
+---
 
 ## Getting Started
 
@@ -90,6 +101,8 @@ Follow these steps to clone the repository and run the application on your local
     * **Tone**: (Optional) Select an emotional tone to prioritize.
     * Click **'Find recommendations'** to see your recommendations!
 
+---
+
 ## Data Pipeline
 
 The project follows a structured data pipeline:
@@ -98,6 +111,8 @@ The project follows a structured data pipeline:
 3.  **Sentiment Analysis**: Book descriptions are analyzed to determine their emotional probabilities (Joy, Sadness, etc.).
 4.  **Vector Embedding**: Book descriptions are converted into vector embeddings using the `all-MiniLM-L6-v2` model and stored in ChromaDB.
 5.  **Retrieval**: The dashboard queries ChromaDB to find semantically similar books and filters/sorts them based on user preferences.
+
+---
 
 ## References
 
