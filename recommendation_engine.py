@@ -3,6 +3,7 @@ import numpy as np
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_ollama import ChatOllama
+from langchain_core.prompts import ChatPromptTemplate
 
 llm = ChatOllama(model="llama3.2")
 
@@ -21,9 +22,24 @@ db_books = Chroma(
     embedding_function=hf_embeddings
 )
 
-def generate_explanation(query: str, recommendations: str) -> str:
-    prompt = f"User asked for: '{query}'. Based on these books: {recommendations}, explain in 2-3 sentences why these were chosen."
-    response = llm.invoke(prompt)
+def generate_explanation(query: str, recommendations: str, history: list) -> str:
+    messages = [
+        ("system", "You are an expert book recommender. You are given a list of books retrieved from a database. Write a 2-3 sentence explanation of why these specific books are a good match for the user's prompt.")
+    ]
+    
+    for msg in history:
+        if msg["role"] == "user":
+            messages.append(("human", msg["content"]))
+        elif msg["role"] == "assistant":
+            messages.append(("assistant", msg["content"]))
+    
+    current_prompt = f"User's new request: '{query}'.\nRetrieved books: {recommendations}\nProvide the 2-3 sentence explanation."
+    messages.append(("human", current_prompt))
+    
+    prompt = ChatPromptTemplate.from_messages(messages)
+    chain = prompt | llm
+    response = chain.invoke({})
+    
     return response.content
 
 def retrieve_semantic_recommendations(
@@ -65,7 +81,7 @@ def recommend_books(query: str, category: str, tone: str, history: list):
     recommendations = retrieve_semantic_recommendations(query, category, tone)
     book_titles = ", ".join(recommendations["title"].dropna().tolist())
     
-    explanation = generate_explanation(query, book_titles)
+    explanation = generate_explanation(query, book_titles, history)
     
     results = []
     for _, row in recommendations.iterrows():
@@ -93,7 +109,7 @@ def recommend_books(query: str, category: str, tone: str, history: list):
         
     history.append({"role": "user", "content": query})
     history.append({"role": "assistant", "content": explanation})
-    
+
     return results, history, ""
 
 def get_categories():
