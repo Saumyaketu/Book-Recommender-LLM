@@ -19,6 +19,7 @@ Additionally, the system includes an **emotion analysis** feature, allowing user
 * **Category Filtering**: Narrow down results by specific genres (Fiction, Nonfiction, Fantasy, etc.).
 * **Interactive Dashboard**: A user-friendly web interface built with **Gradio** for easy interaction.
 * **Zero-Shot Classification**: Uses LLMs to categorize books that were missing genre tags in the original dataset.
+* **Agentic Reasoning Layer**: Integrates a local Large Language Model (Llama 3.2 via Ollama) to dynamically analyze the vector search results and generate a personalized, human-like explanation for the recommended books.
 
 ---
 
@@ -69,13 +70,13 @@ Follow these steps to clone the repository and run the application on your local
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/saumyaketu/book-recommender-llm.git](https://github.com/saumyaketu/book-recommender-llm.git)
+    git clone https://github.com/saumyaketu/book-recommender-llm.git
     cd book-recommender-llm
     ```
 
 2.  **Create a virtual environment:**
     ```bash
-    python -3.10 -m venv llm_env
+    py -m venv llm_env
     .\llm_env\Scripts\Activate.ps1
     ```
 
@@ -83,13 +84,15 @@ Follow these steps to clone the repository and run the application on your local
     ```bash
     pip install -r requirements.txt
     pip install langchain-huggingface
+    pip install sentence-transformers
+    pip install langchain-ollama
     ```
 
 ### Running the App
 
 1.  **Launch the dashboard:**
     ```bash
-    python gradio_dashboard.py
+    py gradio_dashboard.py
     ```
 
 2.  **Access the interface:**
