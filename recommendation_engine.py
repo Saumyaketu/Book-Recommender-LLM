@@ -5,9 +5,12 @@ from langchain_chroma import Chroma
 from langchain_ollama import ChatOllama
 from langchain_core.tools import tool
 from langchain.agents import create_agent
-from langchain_core.messages import HumanMessage, SystemMessage
+from sentence_transformers import CrossEncoder
 
 llm = ChatOllama(model="llama3.2")
+
+# Initialized Cross-Encoder for precision re-ranking
+reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 
 books = pd.read_csv("data/books_with_emotions.csv")
 books["large_thumbnail"] = books["thumbnail"] + "&fife=w800"
@@ -32,7 +35,7 @@ CURRENT_BOOKS_DF = pd.DataFrame()
 def search_chroma_db(query: str, category: str = "All") -> str:
     """
     Searches the database for books matching the user's natural language query.
-    Optionally filters by category.
+    Optionally filters by category and re-ranks results with a Cross-Encoder.
     ALWAYS call this tool first to get book recommendations.
     """
     print(f"\n[AGENT ACTION]: Searching database for '{query}' (Category: {category})...")
@@ -42,11 +45,22 @@ def search_chroma_db(query: str, category: str = "All") -> str:
     books_list = [str(rec.page_content.strip('"').split()[0]).strip() for rec in recs]
     books["isbn13_str"] = books["isbn13"].astype(str).str.split('.').str[0].str.strip()
 
-    book_recs = books[books["isbn13_str"].isin(books_list)]
+    book_recs = books[books["isbn13_str"].isin(books_list)].copy()
     if category != "All":
         book_recs = book_recs[book_recs["simple_categories"] == category]
         
-    CURRENT_BOOKS_DF = book_recs.head(16).copy()
+    candidates = book_recs.head(40).copy()
+    
+    if not candidates.empty:
+        print("[CROSS-ENCODER]: Re-ranking candidates for high relevance...")
+        pairs = [[query, f"{row['title']}: {str(row['description'])}"] for _, row in candidates.iterrows()]
+        
+        scores = reranker.predict(pairs)
+        candidates["cross_score"] = scores
+        
+        candidates.sort_values(by="cross_score", ascending=False, inplace=True)
+        
+    CURRENT_BOOKS_DF = candidates.head(16).copy()
     
     summary = "Retrieved Books:\n"
     for _, row in CURRENT_BOOKS_DF.iterrows():
@@ -82,7 +96,7 @@ def filter_by_emotion(tone: str) -> str:
     return f"Successfully sorted the current books by {tone}."
 
 
-# Initialized the LangGraph ReAct Agent
+# Initialized the LangChain Agent
 tools = [search_chroma_db, filter_by_emotion]
 agent_executor = create_agent(llm, tools)
 
