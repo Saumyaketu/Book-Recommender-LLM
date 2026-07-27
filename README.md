@@ -1,25 +1,26 @@
-# LLM-Powered Book Recommender System
+# Agentic Book Recommender
 
-A semantic book recommendation engine that uses Large Language Models (LLMs) and vector search to find books based on natural language queries, specific categories, and emotional tone.
+A *semantic book recommendation engine* and conversational *AI agent* that uses Large Language Models (LLMs) and vector search to find books based on natural language queries, specific categories, and emotional tone.
 
 ---
 
 ## Overview
 
-This project goes beyond simple keyword matching. By leveraging **LangChain**, **ChromaDB**, and **Hugging Face embeddings**, it allows users to describe what they want to read in plain English (e.g., *"a story about a robot discovering humanity"*). The system analyzes the semantic meaning of the query and returns the most relevant books.
+This project goes beyond simple keyword matching. By leveraging **LangChain**, **LangGraph**, **ChromaDB**, **Hugging Face embeddings**, and an **agent-style workflow**, it allows users to describe what they want to read in plain English and receive semantically relevant book recommendations. The current app also supports category filtering, emotional-tone filtering, and cross-encoder re-ranking for better results.
 
-Additionally, the system includes an **emotion analysis** feature, allowing users to sort recommendations based on the "tone" of the book (e.g., Happy, Suspenseful, Sad).
+Additionally, the system includes an **emotion analysis** feature, allowing users to sort recommendations based on the tone of the book (for example, Happy, Suspenseful, Sad).
 
 ---
 
 ## Features
 
-* **Semantic Search**: Search for books using natural language descriptions rather than just titles or authors.
-* **Emotion Filtering**: Sort recommendations by emotional tone (Happy, Surprise, Suspense, Sad, Fear) using pre-computed sentiment analysis scores.
-* **Category Filtering**: Narrow down results by specific genres (Fiction, Nonfiction, Fantasy, etc.).
-* **Interactive Dashboard**: A user-friendly web interface built with **Gradio** for easy interaction.
-* **Zero-Shot Classification**: Uses LLMs to categorize books that were missing genre tags in the original dataset.
-* **Agentic Reasoning Layer**: Integrates a local Large Language Model (Llama 3.2 via Ollama) to dynamically analyze the vector search results and generate a personalized, human-like explanation for the recommended books.
+* **Agentic Workflow (LangGraph):** Utilizes a ReAct(Reasoning and Acting) state machine to autonomously route user requests to context-specific Python tools (e.g., `search_chroma_db`, `filter_by_emotion`).
+* **Conversational Memory & Chat UI:** A multi-turn Gradio interface with global state persistence, allowing users to ask follow-up queries (e.g., "Make them sad instead") without losing context.
+* **Local Generative Reasoning:** Integrates Llama 3.2 (via Ollama) to analyze vector search results and generate personalized, human-like explanations for recommendations.
+* **Semantic Search:** Discover books using natural language descriptions and themes rather than rigid title or author keywords.
+* **Emotion & Category Filtering:** Sort and filter recommendations by specific emotional tones and specific genres.
+* **Zero-Shot Classification:** Leverages local LLMs to intelligently categorize and assign genre tags to books missing metadata.
+* **Cross-Encoder Re-ranking**: Improves recommendation relevance before results are shown.
 
 ---
 
@@ -27,29 +28,29 @@ Additionally, the system includes an **emotion analysis** feature, allowing user
 
 Here is the dashboard in action:
 
-![Dashboard](screenshots/img1.png)
-![Search Result](screenshots/img2.png)
-![Search Result](screenshots/img3.png)
-![Search Result](screenshots/img4.png)
-![Search Result](screenshots/img5.png)
+![Dashboard](gif.gif)
 
 ---
 
 ## Tech Stack
 
 * **Python**: Core programming language.
-* **LangChain**: For managing the retrieval and LLM chains.
+* **LangChain & LangGraph**: For managing the retrieval, state machines, and LLM ReAct (Reasoning and Acting) agent workflow.
+* **Ollama**: For running the local Llama 3.2 reasoning model.
 * **ChromaDB**: Vector store for efficient semantic search.
-* **Hugging Face Transformers**: For text embeddings (`all-MiniLM-L6-v2`) and zero-shot classification (`facebook/bart-large-mnli`).
+* **Hugging Face Transformers & sentence-transformers**: For text embeddings and related models.
 * **Gradio**: For building the web-based user interface.
+* **CrossEncoder**: For reranking candidate recommendations.
 * **Pandas & NumPy**: For data manipulation and analysis.
 
 ---
 
 ## Project Structure
 
-* `gradio_dashboard.py`: The main entry point. Runs the Gradio web application.
-* `data/`: Contains the dataset files (`books_cleaned.csv`, `books_with_emotions.csv`, `tagged_description.txt`).
+* `gradio_dashboard.py`: The main entry point for the Gradio web application.
+* `recommendation_engine.py`: The current recommendation logic, tool definitions, LangGraph agent setup, and filtering behavior.
+* `data/`: Contains the dataset files such as `books_cleaned.csv`, `books_with_categories.csv`, `books_with_emotions.csv`, and `books.csv`.
+* `chroma_db/`: Stores the persisted Chroma vector database.
 * `vector_search.ipynb`: Notebook demonstrating how the vector database is built and queried.
 * `text_classification.ipynb`: Notebook showing how missing categories were filled using zero-shot classification.
 * `sentiment_analysis.ipynb`: Notebook used to analyze the emotional tone of book descriptions.
@@ -65,6 +66,7 @@ Follow these steps to clone the repository and run the application on your local
 ### Prerequisites
 
 * Python 3.10 
+* **Ollama** installed and running locally
 
 ### Installation
 
@@ -86,34 +88,44 @@ Follow these steps to clone the repository and run the application on your local
     pip install langchain-huggingface
     pip install sentence-transformers
     pip install langchain-ollama
+    pip install langgraph
+    ```
+
+4. **Download the Local LLM:**
+
+    Open a fresh terminal and run the following command to download the Llama 3.2 (3B) model to your local machine:
+
+    ```bash
+    ollama run llama3.2
     ```
 
 ### Running the App
 
-1.  **Launch the dashboard:**
+1.  **Start Ollama** and make sure the Llama 3.2 model is available locally.
+2.  **Launch the dashboard:**
     ```bash
     py gradio_dashboard.py
     ```
-
-2.  **Access the interface:**
+3.  **Access the interface:**
     The terminal will output a local URL (usually `http://127.0.0.1:7860`). Open this link in your web browser.
+4.  **Use the recommender:**
+    * **Chat Interface:** Type a description of the book you are looking for directly into the chat box and press enter.
 
-3.  **Use the recommender:**
-    * **Query**: Type a description of the book you are looking for.
-    * **Category**: (Optional) Select a specific genre from the dropdown.
-    * **Tone**: (Optional) Select an emotional tone to prioritize.
-    * Click **'Find recommendations'** to see your recommendations!
+    * **Follow-ups:** Have a conversation! Ask the agent to filter the current results (e.g., "Make these recommendations sad instead") and watch the gallery update dynamically.
+
+    * **Filters:** (Optional) Use the dropdowns on the left to manually set categories or tones before chatting.
 
 ---
 
 ## Data Pipeline
 
 The project follows a structured data pipeline:
+
 1.  **Data Cleaning**: Raw book data is cleaned and processed.
-2.  **Text Classification**: Missing categories are predicted using a Zero-Shot Classification model.
-3.  **Sentiment Analysis**: Book descriptions are analyzed to determine their emotional probabilities (Joy, Sadness, etc.).
+2.  **Text Classification**: Missing categories are predicted using a zero-shot classification approach.
+3.  **Sentiment Analysis**: Book descriptions are analyzed to determine their emotional probabilities.
 4.  **Vector Embedding**: Book descriptions are converted into vector embeddings using the `all-MiniLM-L6-v2` model and stored in ChromaDB.
-5.  **Retrieval**: The dashboard queries ChromaDB to find semantically similar books and filters/sorts them based on user preferences.
+5.  **Agentic Retrieval and Ranking**: The LangGraph agent queries ChromaDB, applies category and tone filters, and re-ranks candidates before displaying results.
 
 ---
 
@@ -127,8 +139,8 @@ The project makes use of the following datasets, models, and libraries:
 * **Zero-Shot Classification Model**: [facebook/bart-large-mnli](https://huggingface.co/facebook/bart-large-mnli) - Used for predicting missing categories/genres.
 * **Libraries**:
     * LangChain
+    * LangGraph
     * ChromaDB
     * Gradio
     * Hugging Face Transformers
-
-
+    * Ollama
