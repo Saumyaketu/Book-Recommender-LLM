@@ -76,7 +76,7 @@ Follow these steps to clone the repository and run the application on your local
 
 2.  **Create a virtual environment:**
     ```bash
-    py -m venv llm_env
+    py -3.10 -m venv llm_env
     .\llm_env\Scripts\Activate.ps1
     ```
 
